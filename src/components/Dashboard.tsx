@@ -3,7 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { StoryCard } from '@/components/StoryCard';
 import { StrategicThreads } from '@/components/StrategicThreads';
-import { DashboardState } from '@/types/dashboard';
+import { StoryDetailView } from '@/components/StoryDetailView';
+import { StrategicConnectionsView } from '@/components/StrategicConnectionsView';
+import { TimelineView } from '@/components/TimelineView';
+import { DashboardState, StoryCard as StoryCardType } from '@/types/dashboard';
 import { 
   mockStories, 
   mockStrategicThreads, 
@@ -22,6 +25,12 @@ export const Dashboard: React.FC = () => {
     lastUpdated: new Date().toISOString(),
     error: undefined
   });
+
+  // Modal states
+  const [selectedStory, setSelectedStory] = useState<StoryCardType | null>(null);
+  const [showStoryDetail, setShowStoryDetail] = useState(false);
+  const [showConnectionsView, setShowConnectionsView] = useState(false);
+  const [showTimelineView, setShowTimelineView] = useState(false);
 
   // Simulate data loading
   useEffect(() => {
@@ -67,18 +76,32 @@ export const Dashboard: React.FC = () => {
 
   const handleStoryClick = (storyId: string) => {
     console.log('Story clicked:', storyId);
-    toast({
-      title: "Story Detail View",
-      description: "Full story analysis would open here",
-    });
+    const story = dashboardState.stories.find(s => s.id === storyId);
+    if (story) {
+      setSelectedStory(story);
+      setShowStoryDetail(true);
+    }
   };
 
   const handleThreadClick = (threadId: string) => {
     console.log('Thread clicked:', threadId);
-    toast({
-      title: "Strategic Thread",
-      description: "Thread timeline would open here",
-    });
+    const thread = dashboardState.connectedThreads.find(t => t.id === threadId);
+    if (thread) {
+      toast({
+        title: "Strategic Thread Opened",
+        description: `Viewing ${thread.title} with ${thread.storyIds.length} connected stories`,
+      });
+    }
+  };
+
+  const handleViewAllConnections = () => {
+    console.log('View all connections clicked');
+    setShowConnectionsView(true);
+  };
+
+  const handleTimelineView = () => {
+    console.log('Timeline view clicked');
+    setShowTimelineView(true);
   };
 
   const handleSettingsClick = () => {
@@ -174,9 +197,34 @@ export const Dashboard: React.FC = () => {
           <StrategicThreads 
             threads={dashboardState.connectedThreads}
             onThreadClick={handleThreadClick}
+            onViewAllConnections={handleViewAllConnections}
+            onTimelineView={handleTimelineView}
           />
         </div>
       </div>
+
+      {/* Modals */}
+      <StoryDetailView
+        story={selectedStory}
+        isOpen={showStoryDetail}
+        onClose={() => {
+          setShowStoryDetail(false);
+          setSelectedStory(null);
+        }}
+      />
+
+      <StrategicConnectionsView
+        threads={dashboardState.connectedThreads}
+        isOpen={showConnectionsView}
+        onClose={() => setShowConnectionsView(false)}
+      />
+
+      <TimelineView
+        threads={dashboardState.connectedThreads}
+        stories={dashboardState.stories}
+        isOpen={showTimelineView}
+        onClose={() => setShowTimelineView(false)}
+      />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TrendingUp, Clock, Zap, ExternalLink } from 'lucide-react';
 import { StrategicThread } from '@/types/dashboard';
@@ -6,11 +5,15 @@ import { StrategicThread } from '@/types/dashboard';
 interface StrategicThreadsProps {
   threads: StrategicThread[];
   onThreadClick: (threadId: string) => void;
+  onViewAllConnections: () => void;
+  onTimelineView: () => void;
 }
 
 export const StrategicThreads: React.FC<StrategicThreadsProps> = ({
   threads,
-  onThreadClick
+  onThreadClick,
+  onViewAllConnections,
+  onTimelineView
 }) => {
   const getStrengthColor = (strength: number) => {
     if (strength >= 0.8) return 'var(--dashboard-accent-high)';
@@ -155,6 +158,10 @@ export const StrategicThreads: React.FC<StrategicThreadsProps> = ({
               color: 'var(--dashboard-text-secondary)',
               backgroundColor: 'transparent'
             }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewAllConnections();
+            }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--dashboard-bg-card)';
             }}
@@ -170,6 +177,10 @@ export const StrategicThreads: React.FC<StrategicThreadsProps> = ({
             style={{ 
               color: 'var(--dashboard-text-secondary)',
               backgroundColor: 'transparent'
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTimelineView();
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--dashboard-bg-card)';

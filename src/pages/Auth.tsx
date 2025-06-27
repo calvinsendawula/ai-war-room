@@ -24,6 +24,16 @@ const Auth = () => {
       }
     };
     checkUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          navigate('/');
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -32,7 +42,7 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
         });
@@ -43,7 +53,6 @@ const Auth = () => {
           title: "Welcome back!",
           description: "Successfully signed in to AI War Room",
         });
-        navigate('/');
       } else {
         if (password !== confirmPassword) {
           toast({
@@ -54,7 +63,16 @@ const Auth = () => {
           return;
         }
 
-        const { error } = await supabase.auth.signUp({
+        if (password.length < 6) {
+          toast({
+            title: "Password too short",
+            description: "Password must be at least 6 characters long",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -64,15 +82,23 @@ const Auth = () => {
 
         if (error) throw error;
 
-        toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account",
-        });
+        if (data.user && !data.session) {
+          toast({
+            title: "Check your email",
+            description: "Please check your email to verify your account before signing in",
+          });
+        } else {
+          toast({
+            title: "Account created!",
+            description: "Welcome to AI War Room",
+          });
+        }
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
         title: "Authentication Error",
-        description: error.message,
+        description: error.message || "An error occurred during authentication",
         variant: "destructive"
       });
     } finally {
@@ -110,7 +136,7 @@ const Auth = () => {
             className="text-sm"
             style={{ color: 'var(--dashboard-text-secondary)' }}
           >
-            Strategic AI Intelligence Dashboard
+            {isLogin ? 'Sign in to your account' : 'Create your account'}
           </p>
         </div>
 
@@ -128,6 +154,7 @@ const Auth = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              placeholder="Enter your email"
               className="w-full"
               style={{
                 backgroundColor: 'var(--dashboard-bg-secondary)',
@@ -150,6 +177,7 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                placeholder={isLogin ? "Enter your password" : "Choose a password (min 6 characters)"}
                 className="w-full pr-10"
                 style={{
                   backgroundColor: 'var(--dashboard-bg-secondary)',
@@ -181,6 +209,7 @@ const Auth = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                placeholder="Confirm your password"
                 className="w-full"
                 style={{
                   backgroundColor: 'var(--dashboard-bg-secondary)',
@@ -217,6 +246,18 @@ const Auth = () => {
             style={{ color: 'var(--dashboard-accent-blue)' }}
           >
             {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+          </button>
+        </div>
+
+        {/* Back to Landing */}
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => navigate('/landing')}
+            className="text-xs hover:underline"
+            style={{ color: 'var(--dashboard-text-secondary)' }}
+          >
+            ← Back to landing page
           </button>
         </div>
       </div>

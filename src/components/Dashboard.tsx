@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { StoryCard } from '@/components/StoryCard';
 import { StrategicThreads } from '@/components/StrategicThreads';
@@ -17,6 +19,10 @@ import {
 import { toast } from '@/hooks/use-toast';
 
 export const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const [dashboardState, setDashboardState] = useState<DashboardState>({
     stories: [],
     connectedThreads: [],
@@ -41,13 +47,47 @@ export const Dashboard: React.FC = () => {
   const [canRefresh, setCanRefresh] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
 
+  // Check authentication
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          navigate('/landing');
+          return;
+        }
+        setUser(session.user);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        navigate('/landing');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT' || !session) {
+          navigate('/landing');
+        } else {
+          setUser(session.user);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   // Simulate data loading
   useEffect(() => {
+    if (!user) return;
+
     const loadDashboardData = async () => {
       try {
         setDashboardState(prev => ({ ...prev, loading: true }));
         
-        // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         setDashboardState(prev => ({
@@ -75,13 +115,12 @@ export const Dashboard: React.FC = () => {
 
     loadDashboardData();
 
-    // Set up auto-refresh
     const refreshInterval = setInterval(() => {
       loadDashboardData();
     }, dashboardState.userSettings.refreshInterval * 60 * 1000);
 
     return () => clearInterval(refreshInterval);
-  }, [dashboardState.userSettings.refreshInterval, dashboardState.userSettings.topStoriesCount]);
+  }, [user, dashboardState.userSettings.refreshInterval, dashboardState.userSettings.topStoriesCount]);
 
   const handleStoryClick = (storyId: string) => {
     console.log('Story clicked:', storyId);
@@ -149,7 +188,6 @@ export const Dashboard: React.FC = () => {
       description: "Running additional intelligence analysis...",
     });
 
-    // Reset refresh availability after 24 hours
     setTimeout(() => {
       setCanRefresh(true);
       setLastRefreshTime(null);
@@ -163,12 +201,45 @@ export const Dashboard: React.FC = () => {
     });
   };
 
-  const handleLogout = () => {
-    toast({
-      title: "Logout",
-      description: "User would be logged out",
-    });
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out",
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen dashboard-theme">
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div 
+              className="w-12 h-12 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+              style={{ borderColor: 'var(--dashboard-accent-blue)' }}
+            />
+            <p 
+              className="text-lg font-semibold display-font"
+              style={{ color: 'var(--dashboard-text-primary)' }}
+            >
+              Loading Strategic Intelligence...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (dashboardState.loading) {
     return (

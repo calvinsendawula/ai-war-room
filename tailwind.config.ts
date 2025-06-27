@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,19 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Bloomberg-inspired AI Dashboard colors
+				dashboard: {
+					'bg-primary': '#0a0e1a',
+					'bg-secondary': '#131720',
+					'bg-card': '#1a1f2e',
+					'text-primary': '#ffffff',
+					'text-secondary': '#8892b0',
+					'accent-high': '#ff4444',
+					'accent-medium': '#ffaa00',
+					'accent-low': '#00ff88',
+					'accent-blue': '#0088ff',
+					'border': '#2d3748'
 				}
 			},
 			borderRadius: {
@@ -84,11 +98,36 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'slide-in': {
+					'0%': {
+						transform: 'translateY(10px)',
+						opacity: '0'
+					},
+					'100%': {
+						transform: 'translateY(0)',
+						opacity: '1'
+					}
+				},
+				'pulse-glow': {
+					'0%, 100%': {
+						boxShadow: '0 0 5px rgba(0, 136, 255, 0.3)'
+					},
+					'50%': {
+						boxShadow: '0 0 20px rgba(0, 136, 255, 0.6)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'slide-in': 'slide-in 0.3s ease-out',
+				'pulse-glow': 'pulse-glow 2s ease-in-out infinite'
+			},
+			fontFamily: {
+				'mono': ['JetBrains Mono', 'Consolas', 'Monaco', 'monospace'],
+				'display': ['Inter', 'SF Pro Display', 'system-ui', 'sans-serif'],
+				'body': ['Inter', 'SF Pro Text', 'system-ui', 'sans-serif']
 			}
 		}
 	},

@@ -1,8 +1,13 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+/* Import Inter font for professional typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* Bloomberg Terminal Inspired Design System */
 
 @layer base {
   :root {
@@ -37,20 +42,25 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Bloomberg Dashboard Theme - Always Dark */
+    --dashboard-bg-primary: #0a0e1a;
+    --dashboard-bg-secondary: #131720;
+    --dashboard-bg-card: #1a1f2e;
+    --dashboard-text-primary: #ffffff;
+    --dashboard-text-secondary: #8892b0;
+    --dashboard-accent-high: #ff4444;
+    --dashboard-accent-medium: #ffaa00;
+    --dashboard-accent-low: #00ff88;
+    --dashboard-accent-blue: #0088ff;
+    --dashboard-border: #2d3748;
   }
 
   .dark {
@@ -98,6 +108,108 @@
   }
 
   body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     @apply bg-background text-foreground;
+  }
+
+  /* Dashboard specific styling */
+  .dashboard-theme {
+    background-color: var(--dashboard-bg-primary);
+    color: var(--dashboard-text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .dashboard-card {
+    background-color: var(--dashboard-bg-card);
+    border: 1px solid var(--dashboard-border);
+    transition: all 0.2s ease-in-out;
+  }
+
+  .dashboard-card:hover {
+    border-color: var(--dashboard-accent-blue);
+    box-shadow: 0 4px 12px rgba(0, 136, 255, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .importance-high {
+    border-left: 4px solid var(--dashboard-accent-high);
+  }
+
+  .importance-medium {
+    border-left: 4px solid var(--dashboard-accent-medium);
+  }
+
+  .importance-low {
+    border-left: 4px solid var(--dashboard-accent-low);
+  }
+
+  .strategic-glow {
+    box-shadow: 0 0 10px rgba(0, 136, 255, 0.3);
+  }
+
+  /* Custom scrollbar for dashboard */
+  .dashboard-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .dashboard-scrollbar::-webkit-scrollbar-track {
+    background: var(--dashboard-bg-secondary);
+  }
+
+  .dashboard-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--dashboard-border);
+    border-radius: 3px;
+  }
+
+  .dashboard-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--dashboard-accent-blue);
+  }
+
+  /* Typography hierarchy */
+  .display-font {
+    font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+    font-weight: 700;
+  }
+
+  .body-font {
+    font-family: 'Inter', 'SF Pro Text', system-ui, sans-serif;
+  }
+
+  .mono-font {
+    font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  }
+}
+
+@layer components {
+  .btn-strategic {
+    @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
+    background-color: var(--dashboard-accent-blue);
+    color: var(--dashboard-text-primary);
+  }
+
+  .btn-strategic:hover {
+    background-color: rgba(0, 136, 255, 0.8);
+    box-shadow: 0 2px 8px rgba(0, 136, 255, 0.3);
+  }
+
+  .strategic-badge-high {
+    @apply px-2 py-1 rounded text-xs font-mono font-semibold;
+    background-color: rgba(255, 68, 68, 0.2);
+    color: var(--dashboard-accent-high);
+    border: 1px solid var(--dashboard-accent-high);
+  }
+
+  .strategic-badge-medium {
+    @apply px-2 py-1 rounded text-xs font-mono font-semibold;
+    background-color: rgba(255, 170, 0, 0.2);
+    color: var(--dashboard-accent-medium);
+    border: 1px solid var(--dashboard-accent-medium);
+  }
+
+  .strategic-badge-low {
+    @apply px-2 py-1 rounded text-xs font-mono font-semibold;
+    background-color: rgba(0, 255, 136, 0.2);
+    color: var(--dashboard-accent-low);
+    border: 1px solid var(--dashboard-accent-low);
   }
 }

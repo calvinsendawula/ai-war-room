@@ -12,6 +12,8 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -72,11 +74,24 @@ const Auth = () => {
           return;
         }
 
+        if (!firstName.trim()) {
+          toast({
+            title: "First name required",
+            description: "Please enter your first name",
+            variant: "destructive"
+          });
+          return;
+        }
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              first_name: firstName.trim(),
+              last_name: lastName.trim()
+            }
           }
         });
 
@@ -90,7 +105,7 @@ const Auth = () => {
         } else {
           toast({
             title: "Account created!",
-            description: "Welcome to AI War Room",
+            description: `Welcome to AI War Room, ${firstName}!`,
           });
         }
       }
@@ -142,6 +157,52 @@ const Auth = () => {
 
         {/* Form */}
         <form onSubmit={handleAuth} className="space-y-4">
+          {!isLogin && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label 
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: 'var(--dashboard-text-primary)' }}
+                >
+                  First Name *
+                </label>
+                <Input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  placeholder="John"
+                  className="w-full"
+                  style={{
+                    backgroundColor: 'var(--dashboard-bg-secondary)',
+                    borderColor: 'var(--dashboard-border)',
+                    color: 'var(--dashboard-text-primary)'
+                  }}
+                />
+              </div>
+              <div>
+                <label 
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: 'var(--dashboard-text-primary)' }}
+                >
+                  Last Name
+                </label>
+                <Input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Doe"
+                  className="w-full"
+                  style={{
+                    backgroundColor: 'var(--dashboard-bg-secondary)',
+                    borderColor: 'var(--dashboard-border)',
+                    color: 'var(--dashboard-text-primary)'
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label 
               className="block text-sm font-medium mb-2"
@@ -241,6 +302,8 @@ const Auth = () => {
               setIsLogin(!isLogin);
               setPassword('');
               setConfirmPassword('');
+              setFirstName('');
+              setLastName('');
             }}
             className="text-sm hover:underline"
             style={{ color: 'var(--dashboard-accent-blue)' }}

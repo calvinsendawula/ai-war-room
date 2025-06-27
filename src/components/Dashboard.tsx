@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +10,8 @@ import { StrategicConnectionsView } from '@/components/StrategicConnectionsView'
 import { TimelineView } from '@/components/TimelineView';
 import { StrategicThreadDetailView } from '@/components/StrategicThreadDetailView';
 import { DateTimeFilter } from '@/components/DateTimeFilter';
-import { DashboardState, StoryCard as StoryCardType, StrategicThread } from '@/types/dashboard';
+import { DashboardSettings } from '@/components/DashboardSettings';
+import { DashboardState, StoryCard as StoryCardType, StrategicThread, UserSettings } from '@/types/dashboard';
 import { 
   mockStories, 
   mockStrategicThreads, 
@@ -21,6 +23,7 @@ import { toast } from '@/hooks/use-toast';
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const [dashboardState, setDashboardState] = useState<DashboardState>({
@@ -40,11 +43,13 @@ export const Dashboard: React.FC = () => {
   const [showConnectionsView, setShowConnectionsView] = useState(false);
   const [showTimelineView, setShowTimelineView] = useState(false);
   const [showThreadDetail, setShowThreadDetail] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Date/Time filter state
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedTime, setSelectedTime] = useState<'6am' | '6pm'>('6pm');
+  const [selectedTime, setSelectedTime] = useState<'7am' | '4pm' | string>('4pm');
   const [canRefresh, setCanRefresh] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
 
   // Check authentication
@@ -57,6 +62,12 @@ export const Dashboard: React.FC = () => {
           return;
         }
         setUser(session.user);
+        
+        // Mock user profile data (in real app, fetch from profiles table)
+        setUserProfile({
+          first_name: session.user.user_metadata?.first_name || 'User',
+          last_name: session.user.user_metadata?.last_name || ''
+        });
       } catch (error) {
         console.error('Auth check failed:', error);
         navigate('/landing');
@@ -73,6 +84,10 @@ export const Dashboard: React.FC = () => {
           navigate('/landing');
         } else {
           setUser(session.user);
+          setUserProfile({
+            first_name: session.user.user_metadata?.first_name || 'User',
+            last_name: session.user.user_metadata?.last_name || ''
+          });
         }
       }
     );
@@ -122,6 +137,13 @@ export const Dashboard: React.FC = () => {
     return () => clearInterval(refreshInterval);
   }, [user, dashboardState.userSettings.refreshInterval, dashboardState.userSettings.topStoriesCount]);
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   const handleStoryClick = (storyId: string) => {
     console.log('Story clicked:', storyId);
     const story = dashboardState.stories.find(s => s.id === storyId);
@@ -162,7 +184,7 @@ export const Dashboard: React.FC = () => {
     });
   };
 
-  const handleTimeChange = (time: '6am' | '6pm') => {
+  const handleTimeChange = (time: '7am' | '4pm' | string) => {
     setSelectedTime(time);
     toast({
       title: "Time Updated",
@@ -180,14 +202,49 @@ export const Dashboard: React.FC = () => {
       return;
     }
 
+    // Show confirmation toast with action
+    toast({
+      title: "Confirm Manual Refresh",
+      description: "This will use your once-daily manual refresh. Are you sure?",
+      action: (
+        <button
+          onClick={startManualRefresh}
+          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+        >
+          Yes, Refresh
+        </button>
+      ),
+    });
+  };
+
+  const startManualRefresh = () => {
     setCanRefresh(false);
+    setIsRefreshing(true);
     setLastRefreshTime(new Date());
     
+    const currentTime = new Date();
+    const customTime = `${currentTime.getHours() > 12 ? currentTime.getHours() - 12 : currentTime.getHours()}${currentTime.getHours() >= 12 ? 'pm' : 'am'}`;
+    
     toast({
-      title: "Manual Refresh Initiated",
-      description: "Running additional intelligence analysis...",
+      title: "Manual Refresh Started",
+      description: "Pulling new intelligence data. You'll receive an email when complete.",
     });
 
+    // Simulate refresh process
+    setTimeout(() => {
+      setIsRefreshing(false);
+      setSelectedTime(customTime);
+      
+      toast({
+        title: "Refresh Complete",
+        description: `New intelligence briefing available for ${customTime}`,
+      });
+      
+      // Simulate email notification (in real app, this would be handled by backend)
+      console.log('Email notification sent: Manual refresh complete');
+    }, 5000);
+
+    // Reset refresh capability after 24 hours
     setTimeout(() => {
       setCanRefresh(true);
       setLastRefreshTime(null);
@@ -195,10 +252,14 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleSettingsClick = () => {
-    toast({
-      title: "Settings",
-      description: "Dashboard settings panel would open here",
-    });
+    setShowSettings(true);
+  };
+
+  const handleSettingsUpdate = (newSettings: UserSettings) => {
+    setDashboardState(prev => ({
+      ...prev,
+      userSettings: newSettings
+    }));
   };
 
   const handleLogout = async () => {
@@ -279,6 +340,18 @@ export const Dashboard: React.FC = () => {
       <div className="flex h-[calc(100vh-80px)]">
         {/* Main Content Area */}
         <div className="flex-1 p-6 dashboard-scrollbar overflow-y-auto">
+          {/* User Greeting */}
+          {userProfile && (
+            <div className="mb-4">
+              <h1 
+                className="text-xl font-semibold display-font"
+                style={{ color: 'var(--dashboard-text-primary)' }}
+              >
+                {getGreeting()}, {userProfile.first_name}
+              </h1>
+            </div>
+          )}
+
           {/* Date/Time Filter */}
           <div className="mb-6">
             <DateTimeFilter
@@ -288,6 +361,7 @@ export const Dashboard: React.FC = () => {
               onTimeChange={handleTimeChange}
               onManualRefresh={handleManualRefresh}
               canRefresh={canRefresh}
+              isRefreshing={isRefreshing}
             />
           </div>
 
@@ -368,6 +442,13 @@ export const Dashboard: React.FC = () => {
         stories={dashboardState.stories}
         isOpen={showTimelineView}
         onClose={() => setShowTimelineView(false)}
+      />
+
+      <DashboardSettings
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={dashboardState.userSettings}
+        onSettingsUpdate={handleSettingsUpdate}
       />
     </div>
   );

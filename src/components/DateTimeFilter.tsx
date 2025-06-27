@@ -8,11 +8,12 @@ import { format } from 'date-fns';
 
 interface DateTimeFilterProps {
   selectedDate: string;
-  selectedTime: '6am' | '6pm';
+  selectedTime: '7am' | '4pm' | string;
   onDateChange: (date: string) => void;
-  onTimeChange: (time: '6am' | '6pm') => void;
+  onTimeChange: (time: '7am' | '4pm' | string) => void;
   onManualRefresh: () => void;
   canRefresh: boolean;
+  isRefreshing: boolean;
 }
 
 export const DateTimeFilter: React.FC<DateTimeFilterProps> = ({
@@ -21,7 +22,8 @@ export const DateTimeFilter: React.FC<DateTimeFilterProps> = ({
   onDateChange,
   onTimeChange,
   onManualRefresh,
-  canRefresh
+  canRefresh,
+  isRefreshing
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -46,6 +48,10 @@ export const DateTimeFilter: React.FC<DateTimeFilterProps> = ({
       onDateChange(dateStr);
       setIsOpen(false);
     }
+  };
+
+  const isStandardTime = (time: string) => {
+    return time === '7am' || time === '4pm';
   };
 
   return (
@@ -75,7 +81,7 @@ export const DateTimeFilter: React.FC<DateTimeFilterProps> = ({
         >
           <CalendarComponent
             mode="single"
-            selected={new Date(selectedDate)}
+            selected={new Date(selectedDate + 'T12:00:00')}
             onSelect={handleDateSelect}
             disabled={(date) => {
               const today = new Date();
@@ -85,6 +91,15 @@ export const DateTimeFilter: React.FC<DateTimeFilterProps> = ({
             }}
             initialFocus
             className="pointer-events-auto"
+            classNames={{
+              day_selected:
+                "bg-blue-600 text-white hover:bg-blue-700 hover:text-white focus:bg-blue-600 focus:text-white",
+              day_today: "bg-gray-100 text-black font-semibold",
+              day: "text-gray-200 hover:bg-gray-700 hover:text-white",
+              head_cell: "text-gray-300",
+              caption_label: "text-gray-200",
+              nav_button: "text-gray-300 hover:text-white"
+            }}
           />
         </PopoverContent>
       </Popover>
@@ -92,57 +107,71 @@ export const DateTimeFilter: React.FC<DateTimeFilterProps> = ({
       {/* Time Selector */}
       <div className="flex rounded border" style={{ borderColor: 'var(--dashboard-border)' }}>
         <button
-          onClick={() => onTimeChange('6am')}
+          onClick={() => onTimeChange('7am')}
           className={`px-3 py-1.5 text-sm transition-colors ${
-            selectedTime === '6am' ? 'font-semibold' : ''
+            selectedTime === '7am' ? 'font-semibold' : ''
           }`}
           style={{
-            backgroundColor: selectedTime === '6am' 
+            backgroundColor: selectedTime === '7am' 
               ? 'var(--dashboard-accent-blue)' 
               : 'var(--dashboard-bg-secondary)',
-            color: selectedTime === '6am' 
+            color: selectedTime === '7am' 
               ? 'white' 
               : 'var(--dashboard-text-secondary)'
           }}
         >
           <Clock className="w-3 h-3 inline mr-1" />
-          6 AM
+          7 AM
         </button>
         <button
-          onClick={() => onTimeChange('6pm')}
+          onClick={() => onTimeChange('4pm')}
           className={`px-3 py-1.5 text-sm transition-colors ${
-            selectedTime === '6pm' ? 'font-semibold' : ''
+            selectedTime === '4pm' ? 'font-semibold' : ''
           }`}
           style={{
-            backgroundColor: selectedTime === '6pm' 
+            backgroundColor: selectedTime === '4pm' 
               ? 'var(--dashboard-accent-blue)' 
               : 'var(--dashboard-bg-secondary)',
-            color: selectedTime === '6pm' 
+            color: selectedTime === '4pm' 
               ? 'white' 
               : 'var(--dashboard-text-secondary)'
           }}
         >
           <Clock className="w-3 h-3 inline mr-1" />
-          6 PM
+          4 PM
         </button>
+        
+        {/* Show custom refresh time if exists */}
+        {!isStandardTime(selectedTime) && (
+          <button
+            className="px-3 py-1.5 text-sm font-semibold"
+            style={{
+              backgroundColor: 'var(--dashboard-accent-blue)',
+              color: 'white'
+            }}
+          >
+            <Clock className="w-3 h-3 inline mr-1" />
+            {selectedTime}
+          </button>
+        )}
       </div>
 
       {/* Manual Refresh Button */}
       <Button
         onClick={onManualRefresh}
-        disabled={!canRefresh}
+        disabled={!canRefresh || isRefreshing}
         variant="outline"
         size="sm"
         className="h-9 px-3"
         style={{
-          backgroundColor: canRefresh ? 'var(--dashboard-bg-secondary)' : 'var(--dashboard-border)',
+          backgroundColor: (canRefresh && !isRefreshing) ? 'var(--dashboard-bg-secondary)' : 'var(--dashboard-border)',
           borderColor: 'var(--dashboard-border)',
-          color: canRefresh ? 'var(--dashboard-text-primary)' : 'var(--dashboard-text-secondary)',
-          opacity: canRefresh ? 1 : 0.5
+          color: (canRefresh && !isRefreshing) ? 'var(--dashboard-text-primary)' : 'var(--dashboard-text-secondary)',
+          opacity: (canRefresh && !isRefreshing) ? 1 : 0.5
         }}
       >
-        <RefreshCw className="w-4 h-4 mr-2" />
-        Refresh
+        <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+        {isRefreshing ? 'Pulling New Feed...' : 'Refresh'}
       </Button>
     </div>
   );

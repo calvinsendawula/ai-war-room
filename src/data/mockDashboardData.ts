@@ -1,4 +1,3 @@
-
 import { StoryCard, StrategicThread, DashboardStats, UserSettings } from '@/types/dashboard';
 
 export const mockStories: StoryCard[] = [
@@ -258,9 +257,9 @@ export const mockDashboardStats: DashboardStats = {
   lastUpdateTime: '2025-06-27T14:30:00Z'
 };
 
-export const mockUserSettings: UserSettings = {
+export const mockUserSettings = {
   topStoriesCount: 5,
-  refreshInterval: 30,
-  notificationsEnabled: true,
-  importanceThreshold: 'MEDIUM'
+  refreshInterval: 15,
+  morningFeedHour: 7,
+  eveningFeedHour: 16
 };

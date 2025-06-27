@@ -1,4 +1,3 @@
-
 // Strategic AI Intelligence Dashboard Types
 
 export type ImportanceLevel = 'HIGH' | 'MEDIUM' | 'EMERGING';
@@ -60,8 +59,8 @@ export interface DashboardStats {
 export interface UserSettings {
   topStoriesCount: number; // 3, 5, or 10
   refreshInterval: number; // minutes
-  notificationsEnabled: boolean;
-  importanceThreshold: ImportanceLevel;
+  morningFeedHour: number;
+  eveningFeedHour: number;
 }
 
 export interface DashboardState {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { StoryCard } from '@/components/StoryCard';
@@ -6,7 +5,9 @@ import { StrategicThreads } from '@/components/StrategicThreads';
 import { StoryDetailView } from '@/components/StoryDetailView';
 import { StrategicConnectionsView } from '@/components/StrategicConnectionsView';
 import { TimelineView } from '@/components/TimelineView';
-import { DashboardState, StoryCard as StoryCardType } from '@/types/dashboard';
+import { StrategicThreadDetailView } from '@/components/StrategicThreadDetailView';
+import { DateTimeFilter } from '@/components/DateTimeFilter';
+import { DashboardState, StoryCard as StoryCardType, StrategicThread } from '@/types/dashboard';
 import { 
   mockStories, 
   mockStrategicThreads, 
@@ -28,9 +29,17 @@ export const Dashboard: React.FC = () => {
 
   // Modal states
   const [selectedStory, setSelectedStory] = useState<StoryCardType | null>(null);
+  const [selectedThread, setSelectedThread] = useState<StrategicThread | null>(null);
   const [showStoryDetail, setShowStoryDetail] = useState(false);
   const [showConnectionsView, setShowConnectionsView] = useState(false);
   const [showTimelineView, setShowTimelineView] = useState(false);
+  const [showThreadDetail, setShowThreadDetail] = useState(false);
+
+  // Date/Time filter state
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedTime, setSelectedTime] = useState<'6am' | '6pm'>('6pm');
+  const [canRefresh, setCanRefresh] = useState(true);
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
 
   // Simulate data loading
   useEffect(() => {
@@ -87,10 +96,8 @@ export const Dashboard: React.FC = () => {
     console.log('Thread clicked:', threadId);
     const thread = dashboardState.connectedThreads.find(t => t.id === threadId);
     if (thread) {
-      toast({
-        title: "Strategic Thread Opened",
-        description: `Viewing ${thread.title} with ${thread.storyIds.length} connected stories`,
-      });
+      setSelectedThread(thread);
+      setShowThreadDetail(true);
     }
   };
 
@@ -102,6 +109,51 @@ export const Dashboard: React.FC = () => {
   const handleTimelineView = () => {
     console.log('Timeline view clicked');
     setShowTimelineView(true);
+  };
+
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+    toast({
+      title: "Date Updated",
+      description: `Viewing intelligence for ${new Date(date).toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric',
+        year: 'numeric'
+      })}`,
+    });
+  };
+
+  const handleTimeChange = (time: '6am' | '6pm') => {
+    setSelectedTime(time);
+    toast({
+      title: "Time Updated",
+      description: `Viewing ${time.toUpperCase()} intelligence briefing`,
+    });
+  };
+
+  const handleManualRefresh = () => {
+    if (!canRefresh) {
+      toast({
+        title: "Refresh Unavailable",
+        description: "Manual refresh can only be used once per 24-hour period",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCanRefresh(false);
+    setLastRefreshTime(new Date());
+    
+    toast({
+      title: "Manual Refresh Initiated",
+      description: "Running additional intelligence analysis...",
+    });
+
+    // Reset refresh availability after 24 hours
+    setTimeout(() => {
+      setCanRefresh(true);
+      setLastRefreshTime(null);
+    }, 24 * 60 * 60 * 1000);
   };
 
   const handleSettingsClick = () => {
@@ -156,6 +208,18 @@ export const Dashboard: React.FC = () => {
       <div className="flex h-[calc(100vh-80px)]">
         {/* Main Content Area */}
         <div className="flex-1 p-6 dashboard-scrollbar overflow-y-auto">
+          {/* Date/Time Filter */}
+          <div className="mb-6">
+            <DateTimeFilter
+              selectedDate={selectedDate}
+              selectedTime={selectedTime}
+              onDateChange={handleDateChange}
+              onTimeChange={handleTimeChange}
+              onManualRefresh={handleManualRefresh}
+              canRefresh={canRefresh}
+            />
+          </div>
+
           <div className="mb-6">
             <h2 
               className="text-xl font-bold display-font mb-2"
@@ -167,7 +231,7 @@ export const Dashboard: React.FC = () => {
               className="text-sm body-font"
               style={{ color: 'var(--dashboard-text-secondary)' }}
             >
-              {dashboardState.stories.length} high-impact stories ranked by strategic importance
+              {dashboardState.stories.length} high-impact stories for {selectedDate === new Date().toISOString().split('T')[0] ? 'today' : new Date(selectedDate).toLocaleDateString()} • {selectedTime.toUpperCase()} briefing
             </p>
           </div>
 
@@ -210,6 +274,15 @@ export const Dashboard: React.FC = () => {
         onClose={() => {
           setShowStoryDetail(false);
           setSelectedStory(null);
+        }}
+      />
+
+      <StrategicThreadDetailView
+        thread={selectedThread}
+        isOpen={showThreadDetail}
+        onClose={() => {
+          setShowThreadDetail(false);
+          setSelectedThread(null);
         }}
       />
 

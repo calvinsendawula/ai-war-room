@@ -205,7 +205,7 @@ const Landing = () => {
                 className="text-3xl font-bold display-font mb-2"
                 style={{ color: 'var(--dashboard-accent-high)' }}
               >
-                <1s
+                &lt;1s
               </div>
               <p 
                 className="text-sm"

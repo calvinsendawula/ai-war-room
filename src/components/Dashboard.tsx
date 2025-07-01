@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { StoryCard } from '@/components/StoryCard';
@@ -12,12 +14,8 @@ import { StrategicThreadDetailView } from '@/components/StrategicThreadDetailVie
 import { DateTimeFilter } from '@/components/DateTimeFilter';
 import { DashboardSettings } from '@/components/DashboardSettings';
 import { DashboardState, StoryCard as StoryCardType, StrategicThread, UserSettings } from '@/types/dashboard';
-import { 
-  mockStories, 
-  mockStrategicThreads, 
-  mockDashboardStats, 
-  mockUserSettings 
-} from '@/data/mockDashboardData';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { defaultUserSettings } from '@/data/defaultSettings';
 import { toast } from '@/hooks/use-toast';
 
 export const Dashboard: React.FC = () => {
@@ -26,15 +24,12 @@ export const Dashboard: React.FC = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const [dashboardState, setDashboardState] = useState<DashboardState>({
-    stories: [],
-    connectedThreads: [],
-    stats: mockDashboardStats,
-    userSettings: mockUserSettings,
-    loading: true,
-    lastUpdated: new Date().toISOString(),
-    error: undefined
-  });
+  const { 
+    dashboardState, 
+    setDashboardState, 
+    refreshDashboard, 
+    updateUserSettings 
+  } = useDashboardData(defaultUserSettings);
 
   // Modal states
   const [selectedStory, setSelectedStory] = useState<StoryCardType | null>(null);
@@ -95,47 +90,7 @@ export const Dashboard: React.FC = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Simulate data loading
-  useEffect(() => {
-    if (!user) return;
-
-    const loadDashboardData = async () => {
-      try {
-        setDashboardState(prev => ({ ...prev, loading: true }));
-        
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        setDashboardState(prev => ({
-          ...prev,
-          stories: mockStories.slice(0, prev.userSettings.topStoriesCount),
-          connectedThreads: mockStrategicThreads,
-          loading: false,
-          lastUpdated: new Date().toISOString()
-        }));
-
-        toast({
-          title: "Dashboard Updated",
-          description: "Latest strategic intelligence loaded",
-        });
-
-      } catch (error) {
-        console.error('Failed to load dashboard data:', error);
-        setDashboardState(prev => ({
-          ...prev,
-          loading: false,
-          error: 'Failed to load dashboard data'
-        }));
-      }
-    };
-
-    loadDashboardData();
-
-    const refreshInterval = setInterval(() => {
-      loadDashboardData();
-    }, dashboardState.userSettings.refreshInterval * 60 * 1000);
-
-    return () => clearInterval(refreshInterval);
-  }, [user, dashboardState.userSettings.refreshInterval, dashboardState.userSettings.topStoriesCount]);
+  // The data loading is now handled by the useDashboardData hook
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -217,7 +172,7 @@ export const Dashboard: React.FC = () => {
     });
   };
 
-  const startManualRefresh = () => {
+  const startManualRefresh = async () => {
     setCanRefresh(false);
     setIsRefreshing(true);
     setLastRefreshTime(new Date());
@@ -230,8 +185,9 @@ export const Dashboard: React.FC = () => {
       description: "Pulling new intelligence data. You'll receive an email when complete.",
     });
 
-    // Simulate refresh process
-    setTimeout(() => {
+    try {
+      // Actually refresh the dashboard data
+      await refreshDashboard();
       setIsRefreshing(false);
       setSelectedTime(customTime);
       
@@ -239,10 +195,14 @@ export const Dashboard: React.FC = () => {
         title: "Refresh Complete",
         description: `New intelligence briefing available for ${customTime}`,
       });
-      
-      // Simulate email notification (in real app, this would be handled by backend)
-      console.log('Email notification sent: Manual refresh complete');
-    }, 5000);
+    } catch (error) {
+      setIsRefreshing(false);
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh dashboard data. Please try again.",
+        variant: "destructive"
+      });
+    }
 
     // Reset refresh capability after 24 hours
     setTimeout(() => {
@@ -256,10 +216,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleSettingsUpdate = (newSettings: UserSettings) => {
-    setDashboardState(prev => ({
-      ...prev,
-      userSettings: newSettings
-    }));
+    updateUserSettings(newSettings);
   };
 
   const handleLogout = async () => {
@@ -321,8 +278,60 @@ export const Dashboard: React.FC = () => {
               className="text-sm mt-2 mono-font"
               style={{ color: 'var(--dashboard-text-secondary)' }}
             >
-              Analyzing {mockDashboardStats.totalStoriesAnalyzed.toLocaleString()} stories from {mockDashboardStats.sourcesMonitored} sources
+              Analyzing stories from multiple sources...
             </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if there's an error
+  if (dashboardState.error) {
+    return (
+      <div className="min-h-screen dashboard-theme">
+        <DashboardHeader 
+          stats={dashboardState.stats}
+          onSettingsClick={handleSettingsClick}
+          onLogout={handleLogout}
+        />
+        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
+          <div className="text-center max-w-md p-6">
+            <div 
+              className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'var(--dashboard-accent-red)20', border: '2px solid var(--dashboard-accent-red)' }}
+            >
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <h2 
+              className="text-xl font-bold mb-2 display-font"
+              style={{ color: 'var(--dashboard-text-primary)' }}
+            >
+              Connection Error
+            </h2>
+            <p 
+              className="text-sm mb-4 body-font"
+              style={{ color: 'var(--dashboard-text-secondary)' }}
+            >
+              {dashboardState.error}
+            </p>
+            <p 
+              className="text-xs mb-4 mono-font"
+              style={{ color: 'var(--dashboard-text-secondary)' }}
+            >
+              Check the browser console for more details.
+            </p>
+            <Button
+              onClick={() => refreshDashboard()}
+              className="px-4 py-2"
+              style={{
+                backgroundColor: 'var(--dashboard-accent-blue)',
+                color: 'white'
+              }}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry Connection
+            </Button>
           </div>
         </div>
       </div>

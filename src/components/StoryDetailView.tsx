@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, ExternalLink, TrendingUp, Users, Zap, History, Calendar, Globe, Eye } from 'lucide-react';
 import { StoryCard as StoryCardType } from '@/types/dashboard';
+import { apiService } from '@/services/api';
+import { transformArticleDetailToStoryCard } from '@/utils/dataTransforms';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +22,37 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
   isOpen, 
   onClose 
 }) => {
-  if (!story) return null;
+  const [detailedStory, setDetailedStory] = useState<StoryCardType | null>(story);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch detailed story data when story changes
+  useEffect(() => {
+    if (!story || !isOpen) {
+      setDetailedStory(story);
+      return;
+    }
+
+    const fetchDetailedStory = async () => {
+      try {
+        setLoading(true);
+        const articleDetail = await apiService.getArticleDetail(story.id);
+        const transformedStory = transformArticleDetailToStoryCard(articleDetail);
+        setDetailedStory(transformedStory);
+      } catch (error) {
+        console.error('Failed to fetch detailed story:', error);
+        // Fall back to the basic story data
+        setDetailedStory(story);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDetailedStory();
+  }, [story, isOpen]);
+
+  if (!detailedStory) return null;
+
+  const currentStory = loading ? story : detailedStory;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -64,12 +96,12 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
           <div 
             className="inline-block px-4 py-2 rounded-lg font-semibold text-sm"
             style={{ 
-              backgroundColor: `${getImportanceColor(story.importance)}20`,
-              color: getImportanceColor(story.importance),
-              border: `1px solid ${getImportanceColor(story.importance)}`
+              backgroundColor: `${getImportanceColor(currentStory.importance)}20`,
+              color: getImportanceColor(currentStory.importance),
+              border: `1px solid ${getImportanceColor(currentStory.importance)}`
             }}
           >
-            🔴 {story.importance} STRATEGIC IMPORTANCE
+            🔴 {currentStory.importance} STRATEGIC IMPORTANCE
           </div>
 
           {/* Story Title */}
@@ -77,23 +109,29 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
             className="text-3xl font-bold leading-tight display-font"
             style={{ color: 'var(--dashboard-text-primary)' }}
           >
-            {story.title}
+            {currentStory.title}
           </h1>
 
           {/* Publication Info */}
           <div className="flex items-center gap-4 text-sm" style={{ color: 'var(--dashboard-text-secondary)' }}>
             <div className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
-              <span>{formatDate(story.publishedAt)}</span>
+              <span>{formatDate(currentStory.publishedAt)}</span>
             </div>
             <div className="flex items-center gap-1">
               <Globe className="w-4 h-4" />
-              <span>{story.sources.length} sources</span>
+              <span>{currentStory.sources.length} sources</span>
             </div>
-            {story.score && (
+            {currentStory.score && (
               <div className="flex items-center gap-1">
                 <TrendingUp className="w-4 h-4" />
-                <span>Score: {story.score}/100</span>
+                <span>Score: {currentStory.score}/100</span>
+              </div>
+            )}
+            {loading && (
+              <div className="flex items-center gap-1">
+                <Eye className="w-4 h-4" />
+                <span>Loading details...</span>
               </div>
             )}
           </div>
@@ -116,7 +154,7 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
               className="text-base leading-relaxed body-font"
               style={{ color: 'var(--dashboard-text-primary)' }}
             >
-              {story.strategicTakeaway}
+              {currentStory.strategicTakeaway}
             </p>
           </div>
 
@@ -161,7 +199,7 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
                     IMPACT:
                   </span>
                   <p className="text-sm mt-1" style={{ color: 'var(--dashboard-text-secondary)' }}>
-                    {story.strategicDimensions.impact}
+                    {currentStory.strategicDimensions.impact}
                   </p>
                 </div>
               </div>
@@ -172,7 +210,7 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
                     TIMING:
                   </span>
                   <p className="text-sm mt-1" style={{ color: 'var(--dashboard-text-secondary)' }}>
-                    {story.strategicDimensions.timing}
+                    {currentStory.strategicDimensions.timing}
                   </p>
                 </div>
               </div>
@@ -183,7 +221,7 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
                     PLAYERS:
                   </span>
                   <p className="text-sm mt-1" style={{ color: 'var(--dashboard-text-secondary)' }}>
-                    {story.strategicDimensions.players}
+                    {currentStory.strategicDimensions.players}
                   </p>
                 </div>
               </div>
@@ -194,7 +232,7 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
                     PRECEDENT:
                   </span>
                   <p className="text-sm mt-1" style={{ color: 'var(--dashboard-text-secondary)' }}>
-                    {story.strategicDimensions.precedent}
+                    {currentStory.strategicDimensions.precedent}
                   </p>
                 </div>
               </div>
@@ -202,7 +240,7 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
           </div>
 
           {/* Connected Stories */}
-          {story.connectedStories.length > 0 && (
+          {currentStory.connectedStories.length > 0 && (
             <div 
               className="p-6 rounded-lg"
               style={{ backgroundColor: 'var(--dashboard-bg-secondary)' }}
@@ -214,7 +252,7 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
                 CONNECTED DEVELOPMENTS
               </h2>
               <div className="space-y-3">
-                {story.connectedStories.map((connected) => (
+                {currentStory.connectedStories.map((connected) => (
                   <div 
                     key={connected.id}
                     className="flex items-start gap-3 p-3 rounded cursor-pointer transition-colors duration-200"
@@ -268,7 +306,7 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
               SOURCES & REFERENCES
             </h2>
             <div className="space-y-4">
-              {story.sources.map((source) => (
+              {currentStory.sources.map((source) => (
                 <div 
                   key={source.id}
                   className="border rounded-lg p-4 cursor-pointer transition-colors duration-200"

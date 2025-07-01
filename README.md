@@ -1,73 +1,90 @@
-# Welcome to your Lovable project
+# AI War Room - Frontend
 
-## Project info
+Strategic intelligence dashboard for tracking AI industry developments.
 
-**URL**: https://lovable.dev/projects/06b7a3f9-5262-47f2-843f-44acf94eceec
+## What This Is
 
-## How can I edit this code?
+Frontend application that displays:
+- Top strategic AI stories (twice daily: 7am & 4pm feeds)
+- Strategic analysis across Impact, Timing, Players, Precedent dimensions
+- Connection mapping between related stories
+- Importance-based prioritization (HIGH/MEDIUM/EMERGING)
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **React 18** with TypeScript
+- **Vite** for build tooling
+- **Tailwind CSS** + shadcn/ui components
+- **Supabase** for authentication
+- **Backend API** for data (separate repository)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/06b7a3f9-5262-47f2-843f-44acf94eceec) and start prompting.
+## Setup
 
-Changes made via Lovable will be committed automatically to this repo.
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-**Use your preferred IDE**
+2. **Environment variables:**
+   Create `.env` file:
+   ```
+   VITE_BACKEND_URL=http://localhost:8000
+   ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+3. **Start development server:**
+   ```bash
+   npm run dev
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Backend Dependency
 
-Follow these steps:
+This frontend requires the AI War Room backend API running on the specified `VITE_BACKEND_URL`. 
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Key endpoints used:
+- `GET /api/dashboard` - Main dashboard data
+- `GET /api/articles/{id}` - Detailed article view
+- `GET /api/articles` - Article listings
+- `GET /api/categories` - Strategic categories
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Authentication
 
-# Step 3: Install the necessary dependencies.
-npm i
+Uses Supabase Auth. Users must sign up/login to access the dashboard.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## Data Flow
+
+1. User authenticates via Supabase
+2. Dashboard loads stories from backend API
+3. Stories transformed to display format
+4. Real-time updates every 15 minutes (configurable)
+5. Manual refresh available (once per 24 hours)
+
+## Development Notes
+
+- All API calls go through `src/services/api.ts`
+- Data transformations in `src/utils/dataTransforms.ts`
+- Dashboard state managed by `src/hooks/useDashboardData.ts`
+- No mock data - all data comes from backend API
+
+## Common Issues
+
+**No articles showing:**
+- Check browser console for API errors
+- Verify backend is running and accessible
+- Check CORS configuration on backend
+
+**CORS errors:**
+- Backend must allow requests from your frontend URL
+- Common dev URLs: `http://localhost:3000`, `http://localhost:5173`
+
+**Environment variables not loading:**
+- Restart dev server after changing `.env`
+- Ensure variables start with `VITE_`
+
+## Scripts
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
 ```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/06b7a3f9-5262-47f2-843f-44acf94eceec) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
